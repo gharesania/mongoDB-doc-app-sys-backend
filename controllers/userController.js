@@ -8,57 +8,57 @@ BASE_URL = process.env.BASE_URL;
 // Register User
 const register = async (req, res) => {
   try {
-    console.log(req.body);
-    let { name, email, password, contactNumber, address, gender } = req.body;
+    console.log("Body:", req.body);
+    console.log("File:", req.file);
 
-    const imagePath = req.file ? req.file.filename : null;
+    console.log("req.file.filename:", req.file?.filename);
+    console.log("req.file.path:", req.file?.path);
 
-    //Basic Validation
+    const { name, email, password, contactNumber, address, gender } = req.body;
+
+    const imagePath = req.file
+      ? `${process.env.BASE_URL}uploads/${req.file.filename}`
+      : null;
+
+    // Basic Validation
     if (!name || !email || !password) {
       return res
         .status(400)
         .send({ msg: "Name, Email & Password are required!", success: false });
     }
 
-    // Password strength check
     if (password.length < 6) {
       return res.status(400).json({
-        message: "Password must be at least 6 characters long",
+        msg: "Password must be at least 6 characters long",
         success: false,
       });
     }
 
-    // Check existing User
-    const existingUser = await User.findOne({ email: email });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return res
         .status(409)
         .send({ msg: "User already exists", success: false });
-    } else {
-      // Hash Password
-      console.log("Password before hashing: ", password);
-      const salt = await bcrypt.genSalt(10);
-      password = await bcrypt.hash(String(password), salt);
-      console.log("Password after hashing: ", password);
-
-      //Save user
-      newUser = await User.create({
-        name,
-        email,
-        password,
-        contactNumber,
-        address,
-        gender,
-        imagePath,
-      });
-
-      await newUser.save();
-
-      return res.status(200).send({ msg: "User registered !", success: false });
     }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      contactNumber,
+      address,
+      gender,
+      imagePath,
+    });
+
+    await newUser.save();
+    res.status(200).send({ msg: "User registered!", success: true });
   } catch (error) {
-    console.error("Register Error: ", error);
+    console.error("Register Error:", error);
     return res.status(500).send({ msg: "Internal Server Error ❌" });
   }
 };
@@ -115,11 +115,11 @@ const getUserInfo = async (req, res) => {
 
     const loggedUser = await User.findById(req.user.id).select("-password");
 
-    loggedUser.imagePath = process.env.BASE_URL + loggedUser.imagePath;
+    // loggedUser.imagePath = process.env.BASE_URL + loggedUser.imagePath;
 
     console.log("Logged User", loggedUser);
 
-    return res.status(200).send({ user: loggedUser, success: true });
+    res.status(200).send({ user: loggedUser, success: true });
   } catch (error) {
     console.error("User Info Error: ", error);
     return res.status(500).send({ msg: "Internal Server Error ❌" });

@@ -3,7 +3,7 @@ require("dotenv").config();
 
 function auth(req, res, next) {
   if (!req.headers.authorization) {
-    res.status(400).send({ msg: "token not found" });
+    res.status(400).send({ msg: "Token Not Found ⚠️" });
   }
 
   console.log(req.headers.authorization, "***********?????????????????");
@@ -11,11 +11,12 @@ function auth(req, res, next) {
   token = req.headers.authorization;
   
   if (token.startsWith("Bearer")) {
-    console.log(token, "_________Token_______");
+    console.log("_________Token_______" ,token);
     token = token.split(" ")[1];
-    console.log(token, "after removing bearer");
+    console.log("After removing bearer", token);
 
     decoded = jwt.decode(token, process.env.SECREAT_KEY);
+
     console.log("--------decoded---------", decoded);
     req.user = decoded;
     next();
@@ -28,7 +29,7 @@ function doctor(req, res, next) {
   if (req.user.role == "Doctor") {
     next();
   } else {
-    res.status(200).send({ msg: "you are not authorized" });
+    res.status(200).send({ msg: "You are not authorized ❌" });
   }
 }
 
@@ -36,7 +37,7 @@ function admin(req, res, next) {
   if (req.user.role == "Admin") {
     next();
   } else {
-    res.status(200).send({ msg: "you are not authorized" });
+    res.status(200).send({ msg: "You are not authorized ❌" });
   }
 }
 

@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const {auth, admin} = require("../middleware/auth.js");
+const {auth} = require("../middleware/auth.js");
 const upload = require('../middleware/multer');
 
 //Auth
-router.post('/register', upload.single('userImage'),userController.register);
+router.post('/register', upload.single('userImage'),userController.register)
 router.post("/login", userController.login);
 
 //Profile
