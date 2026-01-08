@@ -2,43 +2,47 @@ const Doctor = require("../models/doctorModel");
 const User = require("../models/userModel");
 require("dotenv").config();
 
-async function applyForDoctor(req, res) {
+const applyDoctor = async (req, res) => {
   try {
     const { specialist, fees } = req.body;
-    const createdBy = req.user.id;
     const userId = req.user.id;
 
-    console.log("*****", req.body, createdBy);
+    // Prevent duplicate apply
+    const existing = await Doctor.findOne({
+      userId,
+      status: { $in: ["Pending", "Accept"] },
+    });
 
-    const newDoc = await Doctor.create({ userId, specialist, fees, createdBy });
-    // await newDoc.save();
-    console.log(newDoc, "New Doc");
-
-    if (newDoc) {
-      res.status(200).send({
-        msg: "Successfully applied for doctor position",
-        success: true,
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        msg: "You have already applied or are already a doctor",
       });
-    } else {
-      res
-        .status(200)
-        .send({ msg: "Couldn't apply for doctor position", success: false });
     }
-  } catch (error) {
-    console.log("Doctot application error: ", error);
-    res.status(500).send({ msg: "Internal Server Error !" });
-  }
-}
 
-async function docStatus(req, res) {
+    const newDoc = await Doctor.create({
+      userId,
+      specialist,
+      fees,
+      createdBy: userId,
+    });
+
+    return res.status(201).json({
+      success: true,
+      msg: "Doctor applied successfully",
+    });
+  } catch (error) {
+    console.error("applyDoctor:", error);
+    res.status(500).json({ msg: "Server Error" });
+  }
+};
+
+const docStatus = async (req, res) => {
   try {
-    // const DoctorId = req.params.DoctorId;
-    // console.log("Admin Id:", req.user.id, "Doctor Id:", DoctorId);
-    const { DoctorId } = req.params;
+    const { DoctorID } = req.params;
     const { status } = req.body;
     const adminId = req.user.id;
 
-    // Validate status
     if (!["Accept", "Reject"].includes(status)) {
       return res.status(400).json({
         success: false,
@@ -46,30 +50,29 @@ async function docStatus(req, res) {
       });
     }
 
-    // Doctor not found
-    const getDoctor = await Doctor.findById(DoctorId);
-    console.log(getDoctor);
+    const doctor = await Doctor.findById(DoctorID);
 
-    if (!getDoctor) {
-      return res.status(400).send({ msg: "Doctor Not Found !", success: true });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        msg: "Doctor not found",
+      });
     }
 
-    // Prevent re-approval
-    if (getDoctor.status === "Accept") {
+    if (doctor.status === "Accept") {
       return res.status(400).json({
         success: false,
         msg: "Doctor already approved",
       });
     }
 
-    // Update doctor status
-    getDoctor.status = status;
-    getDoctor.updatedBy = adminId;
-    await getDoctor.save();
+    doctor.status = status;
+    doctor.updatedBy = adminId;
+    await doctor.save();
 
-    // If approved → change user role
+    // If accepted → update user role
     if (status === "Accept") {
-      await User.findByIdAndUpdate(getDoctor.userId, {
+      await User.findByIdAndUpdate(doctor.userId, {
         $set: { role: "Doctor" },
       });
 
@@ -79,22 +82,22 @@ async function docStatus(req, res) {
       });
     }
 
-    // If rejected
     return res.status(200).json({
       success: true,
       msg: "Doctor application rejected",
     });
   } catch (error) {
-    console.error("Doctor status update error:: ", error);
-    return res.status(500).send({ msg: "Internal Server Error ❌" });
+    console.error("docStatus:", error);
+    res.status(500).json({ msg: "Server Error" });
   }
-}
+};
 
-async function getDoctorApplications(req, res) {
+async function docApplyList(req, res) {
   try {
-    const doctors = await Doctor.find()
-      .populate("userId", "name email ") // no password
-      .sort({ createdAt: -1 });
+    const doctorList = await Doctor.find({ status: "Pending" }).populate(
+      "userId",
+      "name email"
+    );
 
     res.status(200).json({
       success: true,
@@ -103,17 +106,13 @@ async function getDoctorApplications(req, res) {
         specialist: doc.specialist,
         fees: doc.fees,
         status: doc.status,
-        createdAt: doc.createdAt,
-        user: doc.userId, // frontend expects `user`
+        user: doc.userId, // contains name + email
       })),
     });
   } catch (error) {
-    console.error("Get Doctor Applications Error:", error);
-    res.status(500).json({
-      success: false,
-      msg: "Failed to fetch doctor applications",
-    });
+    console.error("docApplyList:", error);
+    res.status(500).json({ msg: "Server Error" });
   }
 }
 
-module.exports = { applyForDoctor, docStatus, getDoctorApplications};
+module.exports = { applyDoctor, docStatus, docApplyList };

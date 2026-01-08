@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const {auth} = require("../middleware/auth.js");
+const {auth, admin} = require("../middleware/auth.js");
 const upload = require('../middleware/multer');
 
 //Auth
@@ -12,7 +12,7 @@ router.post("/login", userController.login);
 router.get("/getUserInfo", auth, userController.getUserInfo);
 
 //Lists
-// router.get('/doctorList',auth, userController.doctorList);
+router.get("/doctorList", auth, userController.doctorList);
 // router.get('/userList',auth, admin, userController.userList);
 // router.put('/updateUser', auth, upload, userController.updateUser)
 

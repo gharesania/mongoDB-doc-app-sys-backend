@@ -8,6 +8,8 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes.js');
 const doctorRoutes = require('./routes/doctorRoutes.js')
 const dashboardRoutes = require('./routes/dashobaordRoutes.js')
+const adminRoutes = require('./routes/adminRoutes.js')
+const appointmentRoutes = require('./routes/appointmentRoute.js')
 
 
 const app = express();
@@ -23,6 +25,11 @@ app.get('/', (req, res) => res.send('Hello World!'))
 app.use('/api/user', userRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
+app.use("/api/appointment", appointmentRoutes);
+
+
+
 app.use('/uploads', express.static(path.join(__dirname , "uploads")));
 
 

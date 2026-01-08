@@ -126,4 +126,21 @@ const getUserInfo = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getUserInfo };
+const doctorList = async (req, res) => {
+  try {
+    const doctors = await User.find(
+      { role: "Doctor" },
+      { name: 1 } // only what frontend needs
+    );
+
+    res.status(200).json({
+      success: true,
+      doctors,
+    });
+  } catch (error) {
+    console.error("doctorList:", error);
+    res.status(500).json({ msg: "Server Error" });
+  }
+};
+
+module.exports = { register, login, getUserInfo, doctorList };
