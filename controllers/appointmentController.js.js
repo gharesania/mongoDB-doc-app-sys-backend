@@ -124,9 +124,10 @@ async function updateAppointment(req, res) {
       });
     }
 
-    appointment.appointmentDate = new Date(dateTime);
+    appointment.dateTime = new Date(dateTime);
     appointment.doctorId = doctorId;
     appointment.updatedBy = req.user.id;
+    // console.log("Before save:", appointment.dateTime);
 
     await appointment.save();
 
@@ -136,7 +137,7 @@ async function updateAppointment(req, res) {
       appointment,
     });
   } catch (error) {
-    console.error("updateAppointment:", error);
+    console.error("Update Appointment Error:", error);
     return res.status(500).json({ msg: "Server Error" });
   }
 }
@@ -181,7 +182,7 @@ async function showAppointmentsOfDoctor(req, res) {
     const appointments = await Appointment.find({
       doctorId: req.user.id,
     })
-      .populate("userID", "name")   // ✅ populate patient
+      .populate("userID", "name") // ✅ populate patient
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -194,6 +195,23 @@ async function showAppointmentsOfDoctor(req, res) {
   }
 }
 
+/* ================= All APPOINTMENTS ================= */
+async function allAppointments(req, res) {
+  try {
+    const appointments = await Appointment.find()
+      .populate("doctorId", "name email")
+      .populate("userID", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      appointments,
+    });
+  } catch (error) {
+    console.error("All Appointments Error:", error);
+    res.status(500).json({ success: false, msg: "Server Error" });
+  }
+}
 
 module.exports = {
   createAppointment,
@@ -202,4 +220,5 @@ module.exports = {
   updateAppointment,
   deleteAppointment,
   showAppointmentsOfDoctor,
+  allAppointments,
 };

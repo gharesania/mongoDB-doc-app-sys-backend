@@ -1,6 +1,6 @@
 const express = require('express');
 require('dotenv').config();
-const cors = require('cors')
+const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
 // connectDB();
@@ -8,7 +8,6 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes.js');
 const doctorRoutes = require('./routes/doctorRoutes.js')
 const dashboardRoutes = require('./routes/dashobaordRoutes.js')
-const adminRoutes = require('./routes/adminRoutes.js')
 const appointmentRoutes = require('./routes/appointmentRoute.js')
 
 
@@ -25,7 +24,6 @@ app.get('/', (req, res) => res.send('Hello World!'))
 app.use('/api/user', userRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/admin', adminRoutes);
 app.use("/api/appointment", appointmentRoutes);
 
 
