@@ -10,7 +10,7 @@ const applyDoctor = async (req, res) => {
     // Prevent duplicate apply
     const existing = await Doctor.findOne({
       userId,
-      status: { $in: ["Pending", "Accept"] },
+      status: { $in: ["Pending", "Accepted"] },
     });
 
     if (existing) {
@@ -43,7 +43,7 @@ const docStatus = async (req, res) => {
     const { status } = req.body;
     const adminId = req.user.id;
 
-    if (!["Accept", "Reject"].includes(status)) {
+    if (!["Accepted", "Rejected"].includes(status)) {
       return res.status(400).json({
         success: false,
         msg: "Invalid status value",
@@ -59,7 +59,7 @@ const docStatus = async (req, res) => {
       });
     }
 
-    if (doctor.status === "Accept") {
+    if (doctor.status === "Accepted") {
       return res.status(400).json({
         success: false,
         msg: "Doctor already approved",
@@ -94,9 +94,9 @@ const docStatus = async (req, res) => {
 
 async function docApplyList(req, res) {
   try {
-    const doctorList = await Doctor.find({ status: "Pending" }).populate(
+    const doctors = await Doctor.find().populate(
       "userId",
-      "name email"
+      "name email "
     );
 
     res.status(200).json({
@@ -106,7 +106,7 @@ async function docApplyList(req, res) {
         specialist: doc.specialist,
         fees: doc.fees,
         status: doc.status,
-        user: doc.userId, // contains name + email
+        user: doc.userId, 
       })),
     });
   } catch (error) {

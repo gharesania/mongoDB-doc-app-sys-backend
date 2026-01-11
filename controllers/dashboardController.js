@@ -10,14 +10,24 @@ async function getAdminDashboard(req, res) {
       status: "Accept",
     });
 
-    // const totalAppointments = await Appointment.countDocuments();
+    const totalAppointments = await Appointment.countDocuments();
+
+    const totalPendingAppointments = await Appointment.countDocuments({
+      status: "Pending",
+    });
+
+    const totalCompleteAppointments = await Appointment.countDocuments({
+      status: "Completed",
+    });
 
     res.status(200).json({
       success: true,
       data: {
         totalUsers,
         totalDoctors,
-        // totalAppointments,
+        totalAppointments,
+        totalPendingAppointments,
+        totalCompleteAppointments,
       },
     });
   } catch (error) {
@@ -61,10 +71,10 @@ async function doctorDashboard(req, res) {
 
 async function userDashboard(req, res) {
   try {
-    const userId = req.user.id;
+    const userID = req.user.id;
 
     const totalAppointments = await Appointment.countDocuments({
-      userId,
+      userID,
     });
 
     res.status(200).json({

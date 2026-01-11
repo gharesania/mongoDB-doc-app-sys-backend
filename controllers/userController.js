@@ -1,11 +1,13 @@
 const User = require("../models/userModel");
+const Doctor = require("../models/doctorModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 
-BASE_URL = process.env.BASE_URL;
+const BASE_URL = process.env.BASE_URL;
 
-// Register User
 const register = async (req, res) => {
   try {
     console.log("Body:", req.body);
@@ -115,8 +117,6 @@ const getUserInfo = async (req, res) => {
 
     const loggedUser = await User.findById(req.user.id).select("-password");
 
-    // loggedUser.imagePath = process.env.BASE_URL + loggedUser.imagePath;
-
     console.log("Logged User", loggedUser);
 
     res.status(200).send({ user: loggedUser, success: true });
@@ -126,21 +126,123 @@ const getUserInfo = async (req, res) => {
   }
 };
 
-const doctorList = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
-    const doctors = await User.find(
-      { role: "Doctor" },
-      { name: 1 } // only what frontend needs
+    const userId = req.user.id;
+    const { name, contactNumber, address, gender } = req.body;
+
+    // Find existing user FIRST (to get old image)
+    const existingUser = await User.findById(userId);
+
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    const updateData = {};
+
+    if (name) updateData.name = name;
+    if (contactNumber) updateData.contactNumber = contactNumber;
+    if (address) updateData.address = address;
+    if (gender) updateData.gender = gender;
+
+    // If new image uploaded
+    if (req.file) {
+      // 🔴 DELETE OLD IMAGE (if exists)
+      if (existingUser.imagePath) {
+        const oldImageName = path.basename(existingUser.imagePath);
+        const oldImagePath = path.join(
+          __dirname,
+          "..",
+          "uploads",
+          oldImageName
+        );
+
+        // Delete file safely
+        fs.unlink(oldImagePath, (err) => {
+          if (err) {
+            console.warn("Old image delete failed:", err.message);
+          }
+        });
+      }
+
+      // Save new image path
+      updateData.imagePath = `${process.env.BASE_URL}uploads/${req.file.filename}`;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    }).select("-password");
+
+    res.status(200).json({
+      success: true,
+      msg: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({
+      success: false,
+      msg: "Failed to update profile",
+    });
+  }
+};
+
+const getAllDoctors = async (req, res) => {
+  try {
+    const doctors = await Doctor.find({ status: "Accepted" }).populate(
+      "userId",
+      "name email contactNumber gender"
     );
 
     res.status(200).json({
       success: true,
-      doctors,
+      doctors: doctors.map((doc) => ({
+        _id: doc._id,
+        name: doc.userId.name,
+        email: doc.userId.email,
+        contactNumber: doc.userId.contactNumber,
+        gender: doc.userId.gender,
+        specialist: doc.specialist,
+        fees: doc.fees,
+      })),
     });
   } catch (error) {
-    console.error("doctorList:", error);
+    console.error("getAllDoctors:", error);
     res.status(500).json({ msg: "Server Error" });
   }
 };
 
-module.exports = { register, login, getUserInfo, doctorList };
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find(
+      {},
+      {
+        name: 1,
+        email: 1,
+        gender: 1,
+        contactNumber: 1,
+        role: 1,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    console.error("getAllUsers:", error);
+    res.status(500).json({ msg: "Server Error" });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getUserInfo,
+  updateProfile,
+  getAllDoctors,
+  getAllUsers,  
+};

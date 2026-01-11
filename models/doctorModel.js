@@ -8,7 +8,7 @@ const doctorSchema = mongoose.Schema(
     fees: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["Accept", "Reject", "Pending"],
+      enum: ["Accepted", "Rejected", "Pending"],
       default: "Pending",
     },
     createdBy: {
