@@ -49,7 +49,7 @@ async function doctorDashboard(req, res) {
     });
 
     // total unique patients
-    const patients = await Appointment.distinct("userId", {
+    const patients = await Appointment.distinct("userID", {
       doctorId,
     });
 
